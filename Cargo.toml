@@ -1,6 +1,6 @@
 [package]
 name = "water_uri"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Hassan Sharara <hassansharara12@gmail.com>"]
 repository = "https://github.com/HassanSharara/water_client"

@@ -15,38 +15,36 @@ pub enum Schema {
 /// Struct for parsing URLs into components
 #[derive(Debug, Clone)]
 pub struct Uri {
-    /// the ip address of host
-    /// notice that its return [None] When you give a domain without initializing
+    /// The IP address of the host (None if using a domain)
     pub ip: Option<IpAddr>,
-    /// returns domain name
+    /// Domain name (None if using an IP)
     pub host: Option<String>,
-    /// returns the port where using
+    /// Port number
     pub port: u16,
-    /// path of http
+    /// Path in the URL (e.g., `/test`)
     pub path: Option<String>,
-    /// url schema
+    /// URL schema (HTTP/HTTPS)
     pub schema: Schema,
 }
-
 impl Uri {
     /// Parses a URL string into a `Uri` struct
     pub fn new(url: impl IntoUri + std::fmt::Display) -> UriResult {
-        let mut schema = Schema::Http;
-        let mut url = ToString::to_string(&url);
+        let mut url = url.to_string();
+        let mut schema = Schema::Http; // Default schema
 
-        // Determine schema
+        // Determine schema, if present
         if url.starts_with("https://") {
             schema = Schema::Https;
-            url = ToString::to_string(url.strip_prefix("https://").unwrap());
+            url = url.strip_prefix("https://").unwrap().to_owned();
         } else if url.starts_with("http://") {
-            url = ToString::to_string(url.strip_prefix("http://").unwrap());
-        } else {
+            url = url.strip_prefix("http://").unwrap().to_owned();
+        } else if !url.contains("://") {} else {
             return Err(UriParsingErr::InvalidSchema);
         }
 
         // Extract domain/host and path
         let (domain_or_host, path) = match url.split_once('/') {
-            Some((host, path)) => (host, Some(ToString::to_string(path))),
+            Some((host, path)) => (host, Some(format!("/{}", path))),
             None => (url.as_str(), None),
         };
 
@@ -57,10 +55,10 @@ impl Uri {
             Schema::Https => 443,
         };
 
-        // Handle IPv6 address with port `[IPv6]:port`
+        // Handle IPv6 with port `[IPv6]:port`
         if domain_or_host.starts_with('[') && domain_or_host.contains("]:") {
-            if let Some((ip_s, port_str)) = domain_or_host.trim_matches('[').split_once("]:") {
-                if let Ok(parsed_ip) = IpAddr::from_str(ip_s) {
+            if let Some((ip_str, port_str)) = domain_or_host.trim_matches('[').split_once("]:") {
+                if let Ok(parsed_ip) = IpAddr::from_str(ip_str) {
                     ip = Some(parsed_ip);
                     if let Ok(parsed_port) = port_str.parse::<u16>() {
                         port = parsed_port;
@@ -72,8 +70,8 @@ impl Uri {
                 }
             }
         }
-        // Handle IPv4 address with port `127.0.0.1:8000`
-        else if let Some((host_part, port_str)) = domain_or_host.split_once(':') {
+        // Handle IPv4, IPv6, or domain with port (`127.0.0.1:8000`, `example.com:9000`)
+        else if let Some((host_part, port_str)) = domain_or_host.rsplit_once(':') {
             if let Ok(parsed_port) = port_str.parse::<u16>() {
                 port = parsed_port;
             } else {
@@ -83,15 +81,15 @@ impl Uri {
             if let Ok(parsed_ip) = IpAddr::from_str(host_part) {
                 ip = Some(parsed_ip);
             } else {
-                host = Some(ToString::to_string(host_part));
+                host = Some(host_part.to_owned());
             }
         }
-        // Handle pure domain or IP (`example.com` or `192.168.1.1`)
+        // Handle pure domain or IP without a port (`example.com`, `192.168.1.1`, `localhost`)
         else {
             if let Ok(parsed_ip) = IpAddr::from_str(domain_or_host) {
                 ip = Some(parsed_ip);
             } else {
-                host = Some(ToString::to_string(domain_or_host));
+                host = Some(domain_or_host.to_owned());
             }
         }
 
@@ -104,21 +102,19 @@ impl Uri {
         })
     }
 
-    /// checking if host ip address initialized
-    pub fn is_host_initialized(&self)->bool {
+    /// Checks if the host IP address is initialized
+    pub fn is_host_initialized(&self) -> bool {
         self.host.is_some()
     }
 }
-
-
-impl Into<Uri> for String  {
+impl Into<Uri> for String {
     fn into(self) -> Uri {
-         Uri::new(self).expect("not valid url")
+        Uri::new(self).expect("Invalid URL")
     }
 }
-impl Into<Uri> for &'_ str  {
+impl Into<Uri> for &'_ str {
     fn into(self) -> Uri {
-        Uri::new(self).expect("not valid url")
+        Uri::new(self).expect("Invalid URL")
     }
 }
 
@@ -128,24 +124,20 @@ mod tests {
 
     #[test]
     fn check_urls() {
-        let url1 = "http://37.60.240.202:33523/d4443d17";
-        let url2 = "https://[2a02:c206:2239:411::1]:33523/d4443d17";
-        let url3 = "https://example.com/test";
-        let url4 = "http4://example.com/test"; // This should fail
+        let urls = [
+            ("http://37.60.240.202:33523/d4443d17", true),
+            ("https://[2a02:c206:2239:411::1]:33523/d4443d17", true),
+            ("https://example.com/test", true),
+            ("localhost/test", true),
+            ("localhost:8084/test", true),
+            ("http://localhost:8084/test", true),
+            ("http4://example.com/test", false), // Invalid schema
+        ];
 
-        let uri1 = Uri::new(url1);
-        let uri2 = Uri::new(url2);
-        let uri3 = Uri::new(url3);
-        let uri4 = Uri::new(url4);
-
-        println!("{:?}", uri1);
-        println!("{:?}", uri2);
-        println!("{:?}", uri3);
-        println!("{:?}", uri4);
-
-        assert!(uri1.is_ok());
-        assert!(uri2.is_ok());
-        assert!(uri3.is_ok());
-        assert!(uri4.is_err()); // Expecting an error for invalid schema
+        for (url, should_be_valid) in urls.iter() {
+            let result = Uri::new(*url);
+            println!("{:?}: {:?}", url, result);
+            assert_eq!(result.is_ok(), *should_be_valid);
+        }
     }
 }
