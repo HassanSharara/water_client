@@ -1402,6 +1402,8 @@ dependencies = [
 [[package]]
 name = "water_uri"
 version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8f5a78b69a610bfc7ff7caf5e0056f235b83198335ac9ea87134b1af49505c3"
 
 [[package]]
 name = "web-sys"
