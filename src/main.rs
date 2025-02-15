@@ -1,5 +1,5 @@
 use serde_json::json;
-use water_client::models::client::{HttpClient, SendingRequestError};
+use water_client::models::client::HttpClient;
 use water_client::models::request::{HttpBody, HttpRequest};
 
 #[tokio::main]
@@ -23,7 +23,7 @@ async fn main(){
         ).await {
             Ok(response) => { println!("request sent successfully");
                 let body = response.get_full_body_bytes().await;
-                if let Ok(body) =body {
+                if let Ok(_) =body {
                     continue;
                 }
                 println!("error invoked");

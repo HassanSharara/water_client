@@ -8,9 +8,11 @@ use crate::models::request:: HttpBody;
 /// Represents an HTTP response
 #[derive(Debug)]
 pub struct HttpResponse{
-    http_version: String,
+    /// getting http version from server response
+    pub http_version: String,
     status_code: u16,
-    status_label: String,
+    /// getting http status label with the status code
+    pub status_label: String,
     headers: HashMap<String, String>,
     pub(crate)content_length: Option<usize>,
     pub(crate) body: Option<HttpBody>,
@@ -19,6 +21,8 @@ pub struct HttpResponse{
 }
 
 impl Drop for HttpResponse {
+
+
     fn drop(&mut self) {
         let dropped = self.dropped.clone();
         tokio::spawn(async move {
@@ -87,9 +91,12 @@ impl HttpResponse {
     }
 
 
+    /// getting http status code
+    pub fn status(&self)->&u16{
+        &self.status_code
+    }
 
-
-
+    /// getting all body bytes
     pub async fn get_full_body_bytes(&self)->Result<Vec<u8>,GettingBodyErrors>{
         match & self.body {
             None => {GettingBodyErrors::None.into()}

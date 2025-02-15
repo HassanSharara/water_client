@@ -1,7 +1,7 @@
 use std::ops::{Add, Deref, DerefMut};
 use std::sync::{Arc};
 
-use tokio::{net::TcpStream,sync::{mpsc,Mutex}};
+use tokio::{net::TcpStream,sync::Mutex};
 #[cfg(feature = "debugging")]
 use tracing::debug;
 use water_uri::Uri;

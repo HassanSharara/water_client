@@ -118,8 +118,9 @@ impl  HttpBody {
 
 type BytesSlice = Vec<u8>;
 
+/// for generating a channel for receiving events
 #[derive(Debug)]
-pub (crate) struct BodyBytesSender{
+pub  struct BodyBytesSender{
     pub(crate)receiver:Mutex<Receiver<(BytesSlice,bool)>>,
     pub(crate)length:usize
 }

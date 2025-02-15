@@ -137,7 +137,7 @@ macro_rules! read_bytes {
 
                            let mut connection = connection_arc.lock().await;
                            let mut body = vec![];
-                           let mut sender = sender;
+                           let  sender = sender;
 
 
                            loop {
@@ -217,7 +217,7 @@ impl HttpClient {
 
 
 
-    pub async fn get_connection(&self)->Result<Arc<Mutex<TcpConnection>>,ConnectionsError>{
+    pub (crate) async fn get_connection(&self)->Result<Arc<Mutex<TcpConnection>>,ConnectionsError>{
         let connection = self.pool.as_ref();
         if let Some(connection) = connection {
             let connection = connection.get_connection().await;
