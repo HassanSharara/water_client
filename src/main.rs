@@ -1,38 +1,27 @@
-use serde_json::json;
-use water_client::models::client::HttpClient;
-use water_client::models::request::{HttpBody, HttpRequest};
+use water_client::models::client::{HttpClient};
+use water_client::models::request::{ HttpRequest};
 
 #[tokio::main]
 async fn main(){
-  let mut client = HttpClient::new("127.0.0.1:8084".into());
+  let mut client = HttpClient::new("https://www.google.com".into());
     client.init_connection().await;
 
-
     loop {
-        let mut request = HttpRequest::post("/");
-        request.set_body(
-            HttpBody::from_json(
-                &json!({
-                "hello":"world"
-            })
-            )
-        );
-
-        match client.send_request(
+        let  request = HttpRequest::get("/");
+        match   client.send_request(
             request
         ).await {
-            Ok(response) => { println!("request sent successfully");
-                let body = response.get_full_body_bytes().await;
-                if let Ok(_) =body {
-                    continue;
-                }
-                println!("error invoked");
+            Ok(res) => {
+                    let response = res.get_full_body_bytes().await;
+                    if let Ok(ref body ) = response {
+                        println!("success {:?}",body.len());
+                        continue;
+                    }
+                    println!("error");
             }
             Err(e) => {
-                println!("error {:?}",e);
+                println!("err {:?}",e);
             }
         }
-
-
     }
 }

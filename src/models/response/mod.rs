@@ -102,14 +102,22 @@ impl HttpResponse {
             None => {GettingBodyErrors::None.into()}
             Some(b) => {
                 match b {
-                    HttpBody::Bytes(b) => { Ok(b.to_vec())}
+                    HttpBody::Bytes(b) => {
+                        Ok(b.to_vec())}
                     HttpBody::Stream(b) => {
                         let mut body = vec![];
                         let mut receiver = b.receiver().await;
                         loop {
-                            if let Some((data,end)) = receiver.recv().await {
+                            if let Ok(Some((data,end))) =
+                                 tokio::time::timeout(
+                                     std::time::Duration::from_secs(10),
+                                     receiver.recv()
+                                 ).await
+                                {
                                 body.extend_from_slice(data.as_slice());
-                                if end { break;}
+                                if end {
+                                    break;
+                                }
                             } else {
                                 return GettingBodyErrors::ConnectionError(Some(body)).into()
                             }

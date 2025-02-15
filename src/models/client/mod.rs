@@ -2,7 +2,6 @@ use std::ops::{Add, Deref, DerefMut};
 use std::sync::Arc;
 use tokio::sync::mpsc::channel;
 use std::time::Duration;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::Mutex;
 use water_uri::Uri;
 use crate::check_if_err;
@@ -84,8 +83,12 @@ macro_rules! read_bytes {
                Duration::from_secs(20),
                $connection.stream.read_buf(&mut read_bytes)
            ).await {
+
                let response = HttpResponse::read(&read_bytes).await;
+
                if let Ok(mut response ) = response {
+
+
                    if let Some(content_length) = response.content_length.as_ref() {
                        if content_length <= $self.configurations.max_body_size.as_ref()
                            .unwrap_or(&(1024*8)) {
@@ -114,13 +117,16 @@ macro_rules! read_bytes {
                                       return Ok(response);
                                   }
                                   left_to_parse_as_body -= s;
+                              } else {
+                                  return SendingRequestError::ReadingErrors.into()
                               }
                            }
                        }
                    }
                    else {
-                       let left_bytes = &read_bytes[response.size_of_head.min(read_bytes.len())..];
-                       if left_bytes.is_empty() { return Ok(response);}
+
+                       let left_bytes = &read_bytes[response.size_of_head..];
+                       if left_bytes.is_empty()  { return Ok(response);}
                        let (sender,receiver) = channel::<(Vec<u8>,bool)>(
                            *$self.configurations.max_body_size.as_ref()
                                .unwrap_or(&(1024*8))
@@ -131,6 +137,8 @@ macro_rules! read_bytes {
                                length:0
                            }
                        ));
+
+
                        let is_response_dropped = response.dropped.clone();
                        let connection_arc = connection_arc.clone();
                        tokio::spawn(async move {
@@ -138,27 +146,27 @@ macro_rules! read_bytes {
                            let mut connection = connection_arc.lock().await;
                            let mut body = vec![];
                            let  sender = sender;
-
-
                            loop {
                             let is_response_dropped = is_response_dropped.clone();
                             let check_if_dropped = is_response_dropped.lock().await.deref() == &true;
                             if check_if_dropped {return;}
-                               if let Ok(Ok(s)) = tokio::time::timeout(
+
+                            if let Ok(Ok(s)) = tokio::time::timeout(
                                    Duration::from_secs(10),
                                    connection.stream.read_buf(&mut body)
-                               ).await  {
-                                   if s==0 {
+                                  ).await {
+
+                                   if s==0 || (&body[..s]).ends_with(b"0\r\n\r\n"){
                                        if sender.send((vec![],true)).await.is_err() {return ;}
-                                       break;}
+                                       break;
+                                   }
                                    if sender.send(((&body[..s]).to_vec(),false)).await.is_err() {return ;}
                                    body.clear();
                                    continue;
                                }
-                               if sender.send((vec![],true)).await.is_err() {return ;}
-                               break;
                            }
                        });
+                       return Ok(response);
                    }
                    break;
                }
@@ -175,8 +183,10 @@ macro_rules! send_bytes {
     ($connection:ident,$bytes:ident,$arc:ident,$self:ident) => {
 
         if let Ok(_) = $connection.stream.write_all(&$bytes).await {
+
             read_bytes!($arc,$connection,$self);
         } else {
+
             let uri = $self.uri.clone();
             refresh_connection!($arc,uri);
             return SendingRequestError::WritingErrors.into();
@@ -210,7 +220,7 @@ impl HttpClient {
     pub async fn init_connection(&mut self){
         let pool = TcpConnectionsPool::new(
             &self.uri,
-            self.configurations.max_connections
+            self.configurations.max_connections,
         ).await;
         self.pool = Some(pool);
     }
