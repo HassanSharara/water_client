@@ -156,7 +156,7 @@ macro_rules! read_bytes {
                                    connection.stream.read_buf(&mut body)
                                   ).await {
 
-                                   if s==0 || (&body[..s]).ends_with(b"0\r\n\r\n"){
+                                   if s==0 || (&body[..s]).ends_with(b"\r\n\r\n"){
                                        if sender.send((vec![],true)).await.is_err() {return ;}
                                        break;
                                    }

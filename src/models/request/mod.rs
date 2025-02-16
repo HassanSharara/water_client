@@ -21,13 +21,17 @@ impl   HttpRequest {
     /// creating default request
     pub fn new(into_uri:impl IntoUri ) -> HttpRequest  {
         let mut path = into_uri.to_string();
+        let mut map = HashMap::new();
         if let Ok(uri) = Uri::new(path.clone()) {
+            if let Some(host) = uri.host  {
+                map.insert("Host".to_owned(),host);
+            }
             path = uri.path.unwrap();
         }
         HttpRequest {
             method:"GET",
             path,
-            headers:HashMap::new(),
+            headers:map,
             body:None,
         }
     }

@@ -1619,7 +1619,7 @@ dependencies = [
 
 [[package]]
 name = "water_client"
-version = "0.1.4"
+version = "1.0.1"
 dependencies = [
  "reqwest",
  "serde",
@@ -1634,9 +1634,9 @@ dependencies = [
 
 [[package]]
 name = "water_uri"
-version = "0.1.2"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8f5a78b69a610bfc7ff7caf5e0056f235b83198335ac9ea87134b1af49505c3"
+checksum = "11b037d9f33d1774c9cbd0f3c8100b9f5a4ca298ebb4eb35423847beeab3d467"
 
 [[package]]
 name = "web-sys"
