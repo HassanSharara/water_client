@@ -270,7 +270,6 @@ impl HttpClient {
                        let data = data.clone();
                        request.set_header("Content-Length",data.len());
                        let head_bytes = request.writeable_head_bytes();
-                       println!("invoked {:?}",String::from_utf8_lossy(&head_bytes));
                        send_bytes!(connection,head_bytes,connection_arc,self,{});
                        send_bytes!(connection,data,connection_arc,self);
                    }
