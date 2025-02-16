@@ -1,17 +1,5 @@
 pub mod models;
 pub(crate) mod connection;
 pub (crate) mod  macros;
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+/// for using uri parsing functionality
+pub use water_uri;
