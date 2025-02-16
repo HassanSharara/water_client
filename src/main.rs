@@ -3,11 +3,11 @@ use water_client::models::request::{ HttpRequest};
 
 #[tokio::main]
 async fn main(){
-  let mut client = HttpClient::new("https://www.google.com".into());
+  let mut client = HttpClient::new("https://google.com".into());
     client.init_connection().await;
 
     loop {
-        let  request = HttpRequest::get("/");
+        let   request = HttpRequest::get("/");
         match   client.send_request(
             request
         ).await {

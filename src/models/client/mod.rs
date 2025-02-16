@@ -123,9 +123,27 @@ macro_rules! read_bytes {
                            }
                        }
                    }
+
                    else {
 
-                       let left_bytes = &read_bytes[response.size_of_head..];
+                       let mut left_bytes = &read_bytes[response.size_of_head..];
+
+                       if let Some(encoding) = response.get("Transfer-Encoding") {
+                           if encoding == "chunked" {
+                               if let Some(index) = twoway::find_bytes(left_bytes,b"\r\n") {
+                                   left_bytes = &left_bytes[index+2..];
+                                   if left_bytes.ends_with(b"\r\n0\r\n\r\n") {
+                                    response.body = Some( HttpBody::Bytes(
+                                        (&left_bytes[..left_bytes.len()-7])
+                                        .to_vec()
+                                    ));
+                                       return Ok(response);
+                                   }
+                               }
+                           }
+                       }
+
+
                        if left_bytes.is_empty()  { return Ok(response);}
                        let (sender,receiver) = channel::<(Vec<u8>,bool)>(
                            *$self.configurations.max_body_size.as_ref()
@@ -155,8 +173,7 @@ macro_rules! read_bytes {
                                    Duration::from_secs(10),
                                    connection.stream.read_buf(&mut body)
                                   ).await {
-
-                                   if s==0 || (&body[..s]).ends_with(b"\r\n\r\n"){
+                                   if s==0 || (&body[..s]).ends_with(b"\r\n0\r\n\r\n"){
                                        if sender.send((vec![],true)).await.is_err() {return ;}
                                        break;
                                    }

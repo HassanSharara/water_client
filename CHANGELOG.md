@@ -1,3 +1,5 @@
+# 1.0.2
+ - support chunked transfer encoding
 # 1.0.1
 - auto adding host header
 # 0.1.2
