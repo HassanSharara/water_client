@@ -1,3 +1,5 @@
+# 1.0.1
+- auto adding host header
 # 0.1.2
  - adding water_uri crate functionality
 # 0.1.1
