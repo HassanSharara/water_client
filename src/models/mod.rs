@@ -30,6 +30,7 @@ impl Uri {
     /// Parses a URL string into a `Uri` struct
     pub fn new(url: impl IntoUri + std::fmt::Display) -> UriResult {
         let mut url = url.to_string();
+
         let mut schema = Schema::Http; // Default schema
 
         // Determine schema, if present
@@ -43,11 +44,22 @@ impl Uri {
         }
 
         // Extract domain/host and path
-        let (domain_or_host, path) = match url.split_once('/') {
-            Some((host, path)) => (host, Some(format!("/{}", path))),
-            None => (url.as_str(), None),
+        let ( mut domain_or_host,mut path) = match url.split_once('/') {
+            Some((host, path)) => (host.to_owned(), Some(format!("/{}", path))),
+            None => (url, None),
         };
+        if domain_or_host.contains("?") {
+          if  let Some((a,b)) = domain_or_host.split_once("?"){
+              path = match path {
+                  None => { Some(format!("/?{b}"))}
+                  Some(p) => {
+                      Some(format!("/?{b}{p}"))
+                  }
+              };
+              domain_or_host = format!("{a}");
+          }
 
+        }
         let mut ip = None;
         let mut host = None;
         let mut port = match schema {
@@ -86,7 +98,7 @@ impl Uri {
         }
         // Handle pure domain or IP without a port (`example.com`, `192.168.1.1`, `localhost`)
         else {
-            if let Ok(parsed_ip) = IpAddr::from_str(domain_or_host) {
+            if let Ok(parsed_ip) = IpAddr::from_str(&domain_or_host) {
                 ip = Some(parsed_ip);
             } else {
                 host = Some(domain_or_host.to_owned());
@@ -129,6 +141,7 @@ mod tests {
             ("https://[2a02:c206:2239:411::1]:33523/d4443d17", true),
             ("https://example.com/test", true),
             ("localhost/test", true),
+            ("localhost?target=2&o=4", true),
             ("localhost:8084/test", true),
             ("http://localhost:8084/test", true),
             ("http4://example.com/test", false), // Invalid schema
