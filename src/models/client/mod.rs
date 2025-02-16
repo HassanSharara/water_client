@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc::channel;
 use std::time::Duration;
 use tokio::sync::Mutex;
-use water_uri::Uri;
+use water_uri::{IntoUri, Uri};
 use crate::check_if_err;
 use crate::connection::{ConnectionsError, TcpConnection, TcpConnectionsPool};
 use crate::models::request::{BodyBytesSender, HttpBody, HttpRequest};
@@ -270,6 +270,7 @@ impl HttpClient {
                        let data = data.clone();
                        request.set_header("Content-Length",data.len());
                        let head_bytes = request.writeable_head_bytes();
+                       println!("invoked {:?}",String::from_utf8_lossy(&head_bytes));
                        send_bytes!(connection,head_bytes,connection_arc,self,{});
                        send_bytes!(connection,data,connection_arc,self);
                    }
@@ -308,7 +309,7 @@ impl HttpRequest {
 
     pub (crate) fn writeable_head_bytes(&self)->Vec<u8>{
         let mut to_send = Vec::with_capacity(1000);
-        to_send.extend_from_slice(format!("{} {} HTTP/1.1\r\n",self.method,self.path.replace("//","/")).as_bytes());
+        to_send.extend_from_slice(format!("{} {} HTTP/1.1\r\n",self.method,(&self.path).to_string()).as_bytes());
         for (key,value) in &self.headers {
             to_send.extend_from_slice(format!("{key}: {value}\r\n").as_bytes());
         }

@@ -1,3 +1,5 @@
+# 1.0.3
+- fix url parsing as query parameter
 # 1.0.2
  - support chunked transfer encoding
 # 1.0.1
